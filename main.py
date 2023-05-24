@@ -46,7 +46,6 @@ def main():
     start_time = datetime.now()
 
     open_ports, closed_ports = scan_ports(args.ip, args.ports, args.timeout, args.protocol)
-    open_ports, closed_ports = scan_ports("127.0.0.1", [80, 244, 23], 1, "tcp")
 
     end_time = datetime.now()
     total_time = end_time - start_time
