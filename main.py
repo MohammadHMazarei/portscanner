@@ -3,25 +3,51 @@ import socket
 from datetime import datetime
 
 
+def all_ports(ports):
+    ports = [port for port in ports for port in (range(*map(int, port.split('-')))
+                                                 if '-' in port else [int(port)])]
+    return ports
+
+
+def tcp_connection():
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    return sock
+
+
+def udp_connection():
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    return sock
+
+
+def check_result(sock, target_ip, port, timeout):
+    sock.settimeout(timeout)
+    result = sock.connect_ex((target_ip, port))
+    return result
+
+
+def is_result_zero(result):
+    return result == 0
+
+
 def scan_ports(target_ip, ports, timeout, protocol):
     open_ports = []
     close_ports = []
+    ports = all_ports(ports)
 
     for port in ports:
         try:
             if protocol == "tcp":
                 # Create a TCP socket
-                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                sock = tcp_connection()
             elif protocol == "udp":
                 # Create a UDP socket
-                sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                sock = udp_connection()
             else:
                 print(f"Invalid protocol `{protocol}`")
                 return
-            sock.settimeout(timeout)
-            result = sock.connect_ex((target_ip, port))
 
-            if result == 0:
+            result = check_result(sock, target_ip, port, timeout)
+            if is_result_zero(result):
                 open_ports.append(port)
             else:
                 close_ports.append(port)
@@ -35,7 +61,7 @@ def scan_ports(target_ip, ports, timeout, protocol):
 def main():
     parser = argparse.ArgumentParser(description="Port Scanner")
     parser.add_argument("ip", metavar="IP", type=str, help="Destination IP address")
-    parser.add_argument("ports", metavar="PORT", type=int, nargs="+", help="Ports to scan")
+    parser.add_argument("ports", metavar="PORT", type=str, nargs="+", help="Ports to scan")
     parser.add_argument("--timeout", type=float, default=1.0, help="Timeout for port connections (default: 1.0)")
     parser.add_argument("--protocol", type=str, choices=["tcp", "udp"], default="tcp", help="protocol to use for"
                                                                                             "scanning (default: tcp)")
@@ -58,5 +84,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
