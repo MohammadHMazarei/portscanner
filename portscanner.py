@@ -19,9 +19,29 @@ def udp_connection():
     return sock
 
 
-def check_result(sock, target_ip, port, timeout):
-    sock.settimeout(timeout)
-    result = sock.connect_ex((target_ip, port))
+def check_result_tcp(sock, target_ip, port, timeout):
+    try:
+        sock.settimeout(timeout)
+        sock.connect((target_ip, port))
+        result = 0
+
+    except(socket.timeout, ConnectionRefusedError):
+        result = 1
+    return result
+
+
+def check_result_udp(sock, target_ip, port, timeout):
+    try:
+        sock.settimeout(timeout)
+        sock.connect((target_ip, port))
+        test = b"test"
+        sock.sendto(test, (target_ip, port))
+        response = sock.recv(1024)
+        print(response)
+        result = 0
+
+    except(socket.timeout, ConnectionRefusedError):
+        result = 1
     return result
 
 
@@ -39,14 +59,15 @@ def scan_ports(target_ip, ports, timeout, protocol):
             if protocol == "tcp":
                 # Create a TCP socket
                 sock = tcp_connection()
+                result = check_result_tcp(sock, target_ip, port, timeout)
             elif protocol == "udp":
                 # Create a UDP socket
                 sock = udp_connection()
+                result = check_result_udp(sock, target_ip, port, timeout)
             else:
                 print(f"Invalid protocol `{protocol}`")
                 return
 
-            result = check_result(sock, target_ip, port, timeout)
             if is_result_zero(result):
                 open_ports.append(port)
             else:
